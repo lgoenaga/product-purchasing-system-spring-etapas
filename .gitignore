@@ -4,7 +4,16 @@ target/
 !**/src/test/**/target/
 
 ### IntelliJ IDEA ###
-.idea/
+# Ignorar la mayoría de archivos de .idea/
+.idea/*
+
+# PERO incluir configuraciones compartidas del proyecto
+!.idea/misc.xml
+!.idea/vcs.xml
+!.idea/encodings.xml
+!.idea/compiler.xml
+
+# Archivos personales de IntelliJ (redundante pero explícito)
 *.iws
 *.iml
 *.ipr
@@ -42,15 +51,3 @@ build/
 
 ### Security Documentation (contains sensitive examples) ###
 SECURITY.md
-
-### Documentation (external reference) ###
-# IntelliJ - Include shared configuration, exclude user-specific
-!.idea/
-.idea/workspace.xml
-.idea/usage.statistics.xml
-.idea/shelf/
-.idea/sonarlint/
-.idea/dictionaries/
-.idea/*.iws
-.idea/modules.xml
-.idea/*.iml
