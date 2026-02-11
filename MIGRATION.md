@@ -10,7 +10,6 @@ This repository contains the **Spring Framework implementation path** starting f
 At ETAPA06, the project reached a critical decision point:
 - **Path A (This repo):** Migrate to Spring Framework/Spring Boot for modern development
 - **Path B (Original repo):** Continue with manual EntityManager implementation for deep learning
-See `DECISION_SPRING_VS_MANUAL.md` for detailed analysis.
 ## Date
 Migrated on: February 10, 2026
 ## Next Steps

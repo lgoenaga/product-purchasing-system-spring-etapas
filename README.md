@@ -73,7 +73,7 @@ El modelo completo está documentado en [`documents_external/er_model_documentat
 ### Clonar el repositorio
 ```bash
 git clone git@github.com:lgoenaga/product-purchasing-system-spring.git
-cd product-purchasing-system
+cd product-purchasing-system-spring
 ```
 
 ### Ver las diferentes etapas
