@@ -39,18 +39,15 @@ build/
 *.env
 !.env.example
 *.log
-
 ### Security Documentation (contains sensitive examples) ###
 SECURITY.md
 
 ### Documentation (external reference) ###
 # IntelliJ - Include shared configuration, exclude user-specific
-!.idea/
-.idea/workspace.xml
-.idea/usage.statistics.xml
-.idea/shelf/
-.idea/sonarlint/
-.idea/dictionaries/
-.idea/*.iws
-.idea/modules.xml
-.idea/*.iml
+
+.env.properties
+
+logs
+logs/*
+
+
