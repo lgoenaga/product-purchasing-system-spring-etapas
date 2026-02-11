@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!--
+    Configuración de Logback para Product Purchasing System
+
+    Niveles de logging (de más a menos detallado):
+    - TRACE: Información muy detallada
+    - DEBUG: Información de depuración
+    - INFO:  Información general
+    - WARN:  Advertencias
+    - ERROR: Errores
+    -->
+
+    <!-- ============================================ -->
+    <!-- Propiedades de Configuración                 -->
+    <!-- ============================================ -->
+
+    <!-- Directorio de logs (crear si no existe) -->
+    <property name="LOG_DIR" value="logs"/>
+
+    <!-- Patrón de formato de logs -->
+    <property name="LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+
+    <!-- Patrón de formato colorizado para consola -->
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) [%thread] %cyan(%logger{36}) - %msg%n"/>
+
+    <!-- ============================================ -->
+    <!-- Appender: Consola (STDOUT)                   -->
+    <!-- ============================================ -->
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <!-- Filtrar solo logs INFO y superiores en consola -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>DEBUG</level>
+        </filter>
+    </appender>
+
+    <!-- ============================================ -->
+    <!-- Appender: Archivo General (INFO+)            -->
+    <!-- ============================================ -->
+
+    <appender name="FILE_INFO" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/application.log</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+
+        <!-- Política de rotación -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- Archivo diario -->
+            <fileNamePattern>${LOG_DIR}/application-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <!-- Mantener logs de los últimos 30 días -->
+            <maxHistory>30</maxHistory>
+            <!-- Tamaño máximo total de logs: 1GB -->
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+
+        <!-- Filtrar solo INFO y superiores -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+    </appender>
+
+    <!-- ============================================ -->
+    <!-- Appender: Archivo de Errores (ERROR+)        -->
+    <!-- ============================================ -->
+
+    <appender name="FILE_ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/error.log</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+
+        <!-- Política de rotación -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/error-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>90</maxHistory>
+            <totalSizeCap>500MB</totalSizeCap>
+        </rollingPolicy>
+
+        <!-- Filtrar solo ERROR y superiores -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+    </appender>
+
+    <!-- ============================================ -->
+    <!-- Appender: Archivo SQL (solo queries)         -->
+    <!-- ============================================ -->
+
+    <appender name="FILE_SQL" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/sql.log</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/sql-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>200MB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- ============================================ -->
+    <!-- Loggers Específicos                          -->
+    <!-- ============================================ -->
+
+    <!-- Logger para la aplicación (paquete base) -->
+    <logger name="co.edu.cesde.pps" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE_INFO"/>
+        <appender-ref ref="FILE_ERROR"/>
+    </logger>
+
+    <!-- Logger para Hibernate (framework) -->
+    <logger name="org.hibernate" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE_INFO"/>
+    </logger>
+
+    <!-- Logger para SQL generado por Hibernate -->
+    <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE_SQL"/>
+    </logger>
+
+    <!-- Logger para bind parameters del SQL -->
+    <logger name="org.hibernate.orm.jdbc.bind" level="TRACE" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE_SQL"/>
+    </logger>
+
+    <!-- Logger para transacciones -->
+    <logger name="org.hibernate.transaction" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE_INFO"/>
+    </logger>
+
+    <!-- Logger para HikariCP (connection pool) -->
+    <logger name="com.zaxxer.hikari" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE_INFO"/>
+    </logger>
+
+    <!-- Logger para MySQL Connector -->
+    <logger name="com.mysql.cj" level="WARN" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE_INFO"/>
+    </logger>
+
+    <!-- ============================================ -->
+    <!-- Root Logger (nivel por defecto)              -->
+    <!-- ============================================ -->
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE_INFO"/>
+        <appender-ref ref="FILE_ERROR"/>
+    </root>
+
+    <!-- ============================================ -->
+    <!-- Configuración por Ambiente                   -->
+    <!-- ============================================ -->
+
+    <!--
+    Para cambiar niveles según ambiente, usar profiles o variables:
+
+    DESARROLLO:
+    - co.edu.cesde.pps: DEBUG
+    - org.hibernate.SQL: DEBUG
+    - org.hibernate.orm.jdbc.bind: TRACE
+
+    PRODUCCIÓN:
+    - co.edu.cesde.pps: INFO
+    - org.hibernate.SQL: WARN
+    - org.hibernate.orm.jdbc.bind: OFF
+    -->
+
+</configuration>

@@ -1,0 +1,264 @@
+package co.edu.cesde.pps.model;
+
+import co.edu.cesde.pps.enums.CartStatus;
+import co.edu.cesde.pps.util.CalculationUtils;
+import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+/**
+ * Entidad Cart - Contenedor del carrito de compras.
+ *
+ * El carrito puede pertenecer a un usuario registrado o a un invitado (guest).
+ * Siempre está asociado a una sesión mediante session.
+ *
+ * Campos:
+ * - cartId: Identificador único del carrito (PK)
+ * - user: Usuario propietario (N:1 con User) - NULLABLE para carritos de invitado
+ * - session: Sesión asociada (N:1 con UserSession) - siempre requerido
+ * - status: Estado del carrito (OPEN, CONVERTED, ABANDONED)
+ * - createdAt: Fecha de creación del carrito
+ * - updatedAt: Fecha de última actualización
+ * - items: Lista de items del carrito (1:N con CartItem)
+ *
+ * Comportamiento por tipo de usuario:
+ * - Invitado: user = NULL, session = <UserSession>
+ * - Registrado: user = <User>, session = <UserSession>
+ *
+ * Estados del carrito:
+ * - OPEN: Carrito activo, usuario puede agregar/quitar items
+ * - CONVERTED: Carrito convertido en orden (checkout completado)
+ * - ABANDONED: Carrito abandonado o resultado de merge
+ *
+ * POLÍTICA DE CART MERGE (OBLIGATORIA):
+ * =====================================
+ * Cuando un usuario invitado se registra o inicia sesión y ya existe un carrito
+ * abierto del usuario, se debe ejecutar el siguiente proceso de fusión (merge):
+ *
+ * Escenario:
+ * - Carrito A: carrito del invitado (user = NULL, status = OPEN)
+ * - Carrito B: carrito del usuario registrado (user = User, status = OPEN)
+ *
+ * Proceso de Merge (implementar en capa de servicio - etapa 05):
+ * 1. Identificar ambos carritos por session y user
+ * 2. Para cada CartItem del carrito invitado (A):
+ *    a. Si el mismo product existe en carrito usuario (B):
+ *       - Sumar las cantidades (quantity)
+ *       - Resolver conflicto de unitPrice (conservar más reciente o del usuario según política)
+ *    b. Si el product NO existe en carrito usuario (B):
+ *       - Mover/copiar el CartItem al carrito del usuario (B)
+ * 3. Marcar carrito invitado (A) como status = ABANDONED
+ * 4. Usuario continúa con carrito único (B) sin pérdida de productos
+ *
+ * Resultado:
+ * - El usuario mantiene un solo carrito activo
+ * - No se pierden productos agregados como invitado
+ * - No hay duplicación innecesaria de items
+ *
+ * Ver documentación completa en: documents_external/er_model_documentation.md - Sección 5
+ *
+ * Relaciones:
+ * - N:1 con User (opcional, nullable para invitados)
+ * - N:1 con UserSession (obligatorio)
+ * - 1:N con CartItem (un carrito tiene muchos items)
+ *
+ * NOTA: Los métodos de gestión bidireccional (addItem, removeItem) fueron movidos
+ * a la capa de servicio (CartService) en etapa 05 para mantener el modelo limpio.
+ */
+@Entity
+@Table(name = "carts")
+public class Cart {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "cart_id")
+    private Long cartId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user; // Nullable - NULL para invitados
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "session_id")
+    private UserSession session;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private CartStatus status;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    // Colección para relación 1:N
+    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CartItem> items;
+
+    // Constructor vacío (requerido para JPA)
+    public Cart() {
+        this.items = new ArrayList<>();
+    }
+
+    // Constructor para carrito de invitado
+    public Cart(UserSession session) {
+        this.user = null; // Invitado
+        this.session = session;
+        this.status = CartStatus.OPEN;
+        this.items = new ArrayList<>();
+    }
+
+    // Constructor para carrito de usuario registrado
+    public Cart(User user, UserSession session) {
+        this.user = user;
+        this.session = session;
+        this.status = CartStatus.OPEN;
+        this.items = new ArrayList<>();
+    }
+
+    // Constructor completo (excepto ID y timestamps autogenerados)
+    public Cart(User user, UserSession session, CartStatus status) {
+        this.user = user;
+        this.session = session;
+        this.status = status != null ? status : CartStatus.OPEN;
+        this.items = new ArrayList<>();
+    }
+
+    // Lifecycle callbacks
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+        if (this.status == null) {
+            this.status = CartStatus.OPEN;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // Getters y Setters
+
+    public Long getCartId() {
+        return cartId;
+    }
+
+    public void setCartId(Long cartId) {
+        this.cartId = cartId;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public UserSession getSession() {
+        return session;
+    }
+
+    public void setSession(UserSession session) {
+        this.session = session;
+    }
+
+    public CartStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(CartStatus status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public List<CartItem> getItems() {
+        return items;
+    }
+
+    public void setItems(List<CartItem> items) {
+        this.items = items;
+    }
+
+    // Métodos helper de consulta (sin efectos secundarios)
+
+    /**
+     * Verifica si es carrito de invitado
+     */
+    public boolean isGuestCart() {
+        return user == null;
+    }
+
+    /**
+     * Verifica si el carrito está activo
+     */
+    public boolean isOpen() {
+        return status == CartStatus.OPEN;
+    }
+
+    /**
+     * Calcula el total del carrito sumando todos los items
+     * Delegado a CalculationUtils para centralizar lógica de cálculo
+     */
+    public BigDecimal calculateTotal() {
+        List<BigDecimal> subtotals = items.stream()
+            .map(CartItem::calculateSubtotal)
+            .collect(Collectors.toList());
+        return CalculationUtils.calculateCartTotal(subtotals);
+    }
+
+    // equals y hashCode basados en ID
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Cart cart = (Cart) o;
+        return Objects.equals(cartId, cart.cartId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(cartId);
+    }
+
+    // toString sin navegación a objetos relacionados (solo IDs y tamaño de colección)
+
+    @Override
+    public String toString() {
+        return "Cart{" +
+                "cartId=" + cartId +
+                ", userId=" + (user != null ? user.getUserId() : null) +
+                ", sessionId=" + (session != null ? session.getSessionId() : null) +
+                ", status=" + status +
+                ", isGuest=" + isGuestCart() +
+                ", isOpen=" + isOpen() +
+                ", itemsCount=" + (items != null ? items.size() : 0) +
+                ", total=" + calculateTotal() +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                '}';
+    }
+}

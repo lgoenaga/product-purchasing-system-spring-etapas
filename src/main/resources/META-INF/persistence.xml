@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
+             https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+             version="3.0">
+
+    <!--
+    Persistence Unit para Product Purchasing System
+
+    Este archivo configura JPA/Hibernate para trabajar con MySQL sin Spring.
+    Las propiedades se cargan desde variables de entorno definidas en .env
+    -->
+    <persistence-unit name="pps-persistence-unit" transaction-type="RESOURCE_LOCAL">
+
+        <!-- Provider: Hibernate -->
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+
+        <!-- Entidades JPA (se agregarán en Etapa 07 cuando se anoten con @Entity) -->
+        <!-- Por ahora vacío, Hibernate auto-detectará las entidades anotadas -->
+        <!-- <class>co.edu.cesde.pps.model.User</class> -->
+        <!-- <class>co.edu.cesde.pps.model.Role</class> -->
+        <!-- <class>co.edu.cesde.pps.model.Product</class> -->
+        <!-- etc... -->
+
+        <properties>
+            <!-- ============================================ -->
+            <!-- Propiedades de Conexión a Base de Datos     -->
+            <!-- ============================================ -->
+
+            <!-- JDBC Driver -->
+            <property name="jakarta.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver"/>
+
+            <!-- JDBC URL - Las variables se leerán desde System.getenv() -->
+            <!-- Formato: jdbc:mysql://host:port/database?params -->
+            <property name="jakarta.persistence.jdbc.url"
+                      value="jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:pps_db}?useSSL=false&amp;serverTimezone=UTC&amp;allowPublicKeyRetrieval=true"/>
+
+            <!-- Credenciales -->
+            <!-- IMPORTANTE: Las variables ${DB_USER} y ${DB_PASSWORD} deben definirse
+                 en variables de entorno o en el archivo .env -->
+            <property name="jakarta.persistence.jdbc.user" value="${DB_USER:user_pps}"/>
+            <property name="jakarta.persistence.jdbc.password" value="${DB_PASSWORD:}"/>
+
+            <!-- ============================================ -->
+            <!-- Propiedades de Hibernate                    -->
+            <!-- ============================================ -->
+
+            <!-- Dialecto de MySQL 8 -->
+            <property name="hibernate.dialect" value="org.hibernate.dialect.MySQL8Dialect"/>
+
+            <!--
+            Estrategia de generación de esquema:
+            - create: Borra y recrea el esquema en cada inicio (desarrollo inicial)
+            - update: Actualiza el esquema preservando datos (desarrollo)
+            - validate: Solo valida que el esquema coincida (testing)
+            - none: No toca el esquema (producción)
+
+            Para Etapa 06: Usar 'update' para que cree las tablas automáticamente
+            Para Etapa 07+: Cambiar a 'validate' o 'none' y usar scripts SQL
+            -->
+            <property name="hibernate.hbm2ddl.auto" value="update"/>
+
+            <!-- Mostrar SQL generado en consola (útil para desarrollo) -->
+            <property name="hibernate.show_sql" value="true"/>
+
+            <!-- Formatear SQL para mejor legibilidad -->
+            <property name="hibernate.format_sql" value="true"/>
+
+            <!-- Incluir comentarios en el SQL generado -->
+            <property name="hibernate.use_sql_comments" value="true"/>
+
+            <!-- Mostrar valores de bind parameters en logs -->
+            <property name="hibernate.highlight_sql" value="true"/>
+
+            <!-- ============================================ -->
+            <!-- Connection Pool - HikariCP (recomendado)    -->
+            <!-- ============================================ -->
+
+            <!-- Tamaño mínimo del pool -->
+            <property name="hibernate.hikari.minimumIdle" value="5"/>
+
+            <!-- Tamaño máximo del pool -->
+            <property name="hibernate.hikari.maximumPoolSize" value="20"/>
+
+            <!-- Timeout de conexión (30 segundos) -->
+            <property name="hibernate.hikari.connectionTimeout" value="30000"/>
+
+            <!-- Tiempo máximo de vida de una conexión (30 minutos) -->
+            <property name="hibernate.hikari.maxLifetime" value="1800000"/>
+
+            <!-- Timeout de idle (10 minutos) -->
+            <property name="hibernate.hikari.idleTimeout" value="600000"/>
+
+            <!-- ============================================ -->
+            <!-- Configuraciones Adicionales                 -->
+            <!-- ============================================ -->
+
+            <!-- Habilitar estadísticas de Hibernate (solo desarrollo) -->
+            <property name="hibernate.generate_statistics" value="false"/>
+
+            <!-- Estrategia de nomenclatura (usar snake_case para tablas/columnas) -->
+            <property name="hibernate.physical_naming_strategy"
+                      value="org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl"/>
+
+            <!-- Auto-commit deshabilitado (mejor control transaccional) -->
+            <property name="hibernate.connection.autocommit" value="false"/>
+
+            <!-- Timezone para fechas -->
+            <property name="hibernate.jdbc.time_zone" value="UTC"/>
+
+        </properties>
+    </persistence-unit>
+
+</persistence>
