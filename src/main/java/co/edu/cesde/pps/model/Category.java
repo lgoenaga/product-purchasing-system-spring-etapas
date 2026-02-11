@@ -1,9 +1,10 @@
 package co.edu.cesde.pps.model;
 
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Entidad Category - Organiza el catálogo en categorías jerárquicas.
@@ -29,11 +30,18 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "categories")
+@Getter
+@Setter
+@NoArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@ToString(onlyExplicitlyIncluded = true)
 public class Category {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "category_id")
+    @EqualsAndHashCode.Include
+    @ToString.Include
     private Long categoryId;
 
     // Auto-referencia: Relación padre-hijo (jerárquica)
@@ -42,128 +50,24 @@ public class Category {
     private Category parent; // Nullable - NULL para categorías raíz
 
     @Column(name = "name", nullable = false, length = 100)
+    @ToString.Include
     private String name;
 
     @Column(name = "slug", nullable = false, unique = true, length = 100)
+    @ToString.Include
     private String slug;
 
     // Colecciones para relaciones 1:N
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Category> subcategories;
+    private List<Category> subcategories = new ArrayList<>();
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Product> products;
-
-    // Constructor vacío (requerido para JPA futuro)
-    public Category() {
-        this.subcategories = new ArrayList<>();
-        this.products = new ArrayList<>();
-    }
-
-    // Constructor para categoría raíz (sin parent)
-    public Category(String name, String slug) {
-        this.parent = null; // Categoría raíz
-        this.name = name;
-        this.slug = slug;
-        this.subcategories = new ArrayList<>();
-        this.products = new ArrayList<>();
-    }
-
-    // Constructor para subcategoría (con parent)
-    public Category(Category parent, String name, String slug) {
-        this.parent = parent;
-        this.name = name;
-        this.slug = slug;
-        this.subcategories = new ArrayList<>();
-        this.products = new ArrayList<>();
-    }
-
-    // Getters y Setters
-
-    public Long getCategoryId() {
-        return categoryId;
-    }
-
-    public void setCategoryId(Long categoryId) {
-        this.categoryId = categoryId;
-    }
-
-    public Category getParent() {
-        return parent;
-    }
-
-    public void setParent(Category parent) {
-        this.parent = parent;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getSlug() {
-        return slug;
-    }
-
-    public void setSlug(String slug) {
-        this.slug = slug;
-    }
-
-    public List<Category> getSubcategories() {
-        return subcategories;
-    }
-
-    public void setSubcategories(List<Category> subcategories) {
-        this.subcategories = subcategories;
-    }
-
-    public List<Product> getProducts() {
-        return products;
-    }
-
-    public void setProducts(List<Product> products) {
-        this.products = products;
-    }
-
-    // Métodos helper de consulta (sin efectos secundarios)
+    private List<Product> products = new ArrayList<>();
 
     /**
      * Verifica si es categoría raíz
      */
     public boolean isRootCategory() {
         return parent == null;
-    }
-
-    // equals y hashCode basados en ID
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Category category = (Category) o;
-        return Objects.equals(categoryId, category.categoryId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(categoryId);
-    }
-
-    // toString sin navegación a objetos relacionados (solo IDs y tamaño de colecciones)
-
-    @Override
-    public String toString() {
-        return "Category{" +
-                "categoryId=" + categoryId +
-                ", parentId=" + (parent != null ? parent.getCategoryId() : null) +
-                ", name='" + name + '\'' +
-                ", slug='" + slug + '\'' +
-                ", isRoot=" + isRootCategory() +
-                ", subcategoriesCount=" + (subcategories != null ? subcategories.size() : 0) +
-                ", productsCount=" + (products != null ? products.size() : 0) +
-                '}';
     }
 }

@@ -2,9 +2,10 @@ package co.edu.cesde.pps.model;
 
 import co.edu.cesde.pps.util.ValidationUtils;
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 /**
  * Entidad Product - Representa productos vendibles en la tienda.
@@ -32,11 +33,20 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "products")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@ToString(onlyExplicitlyIncluded = true)
 public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "product_id")
+    @EqualsAndHashCode.Include
+    @ToString.Include
     private Long productId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -44,51 +54,29 @@ public class Product {
     private Category category;
 
     @Column(name = "sku", nullable = false, unique = true, length = 50)
+    @ToString.Include
     private String sku;
 
     @Column(name = "name", nullable = false, length = 255)
+    @ToString.Include
     private String name;
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
+    @ToString.Include
     private BigDecimal price;
 
     @Column(name = "stock_qty", nullable = false)
     private Integer stockQty;
 
     @Column(name = "is_active", nullable = false)
+    @ToString.Include
     private Boolean isActive;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
-
-    // Constructor vacío (requerido para JPA)
-    public Product() {
-    }
-
-    // Constructor con campos obligatorios
-    public Product(Category category, String sku, String name, BigDecimal price, Integer stockQty) {
-        this.category = category;
-        this.sku = sku;
-        this.name = name;
-        this.price = price;
-        this.stockQty = stockQty;
-        this.isActive = true; // Por defecto activo
-    }
-
-    // Constructor completo (excepto ID y timestamp autogenerados)
-    public Product(Category category, String sku, String name, String description,
-                   BigDecimal price, Integer stockQty, Boolean isActive) {
-        this.category = category;
-        this.sku = sku;
-        this.name = name;
-        this.description = description;
-        this.price = price;
-        this.stockQty = stockQty;
-        this.isActive = isActive != null ? isActive : true;
-    }
 
     // Lifecycle callback para establecer createdAt
     @PrePersist
@@ -99,59 +87,10 @@ public class Product {
         }
     }
 
-    // Getters y Setters
-
-    public Long getProductId() {
-        return productId;
-    }
-
-    public void setProductId(Long productId) {
-        this.productId = productId;
-    }
-
-    public Category getCategory() {
-        return category;
-    }
-
-    public void setCategory(Category category) {
-        this.category = category;
-    }
-
-    public String getSku() {
-        return sku;
-    }
-
-    public void setSku(String sku) {
-        this.sku = sku;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
+    // Mantener validaciones en setters críticos
     public void setPrice(BigDecimal price) {
         ValidationUtils.validateNonNegative(price, "price");
         this.price = price;
-    }
-
-    public Integer getStockQty() {
-        return stockQty;
     }
 
     public void setStockQty(Integer stockQty) {
@@ -159,56 +98,7 @@ public class Product {
         this.stockQty = stockQty;
     }
 
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    // Método helper para verificar disponibilidad
     public boolean isAvailable() {
         return isActive != null && isActive && stockQty != null && stockQty > 0;
-    }
-
-    // equals y hashCode basados en ID
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Product product = (Product) o;
-        return Objects.equals(productId, product.productId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(productId);
-    }
-
-    // toString sin navegación a objetos relacionados (solo IDs)
-
-    @Override
-    public String toString() {
-        return "Product{" +
-                "productId=" + productId +
-                ", categoryId=" + (category != null ? category.getCategoryId() : null) +
-                ", sku='" + sku + '\'' +
-                ", name='" + name + '\'' +
-                ", price=" + price +
-                ", stockQty=" + stockQty +
-                ", isActive=" + isActive +
-                ", isAvailable=" + isAvailable() +
-                ", createdAt=" + createdAt +
-                '}';
     }
 }
