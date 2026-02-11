@@ -2,6 +2,8 @@
 
 Sistema de compras de productos informáticos online - Proyecto educativo Backend II
 
+> **Note:** This repository contains the project up to ETAPA06 - the architectural decision point between JPA/EntityManager and Spring Framework.
+
 ## 📋 Descripción
 
 Sistema de tienda online que permite:
@@ -70,7 +72,7 @@ El modelo completo está documentado en [`documents_external/er_model_documentat
 
 ### Clonar el repositorio
 ```bash
-git clone git@github.com:lgoenaga/product-purchasing-system.git
+git clone git@github.com:lgoenaga/product-purchasing-system-spring.git
 cd product-purchasing-system
 ```
 
