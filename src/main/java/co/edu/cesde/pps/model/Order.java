@@ -3,11 +3,12 @@ package co.edu.cesde.pps.model;
 import co.edu.cesde.pps.util.CalculationUtils;
 import co.edu.cesde.pps.util.ValidationUtils;
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Entidad Order - Representa una compra finalizada (pedido/orden).
@@ -46,14 +47,22 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "orders")
+@Getter
+@Setter
+@NoArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@ToString(onlyExplicitlyIncluded = true)
 public class Order {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_id")
+    @EqualsAndHashCode.Include
+    @ToString.Include
     private Long orderId;
 
     @Column(name = "order_number", nullable = false, unique = true, length = 50)
+    @ToString.Include
     private String orderNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -82,21 +91,19 @@ public class Order {
     private BigDecimal shippingCost;
 
     @Column(name = "total", nullable = false, precision = 10, scale = 2)
+    @ToString.Include
     private BigDecimal total;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    // Colección para relación 1:N con OrderItem
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderItem> items;
+    private List<OrderItem> items = new ArrayList<>();
 
-    // Constructor vacío (requerido para JPA)
-    public Order() {
-        this.items = new ArrayList<>();
-    }
-
-    // Constructor con campos obligatorios
+    /**
+     * Constructor con campos obligatorios.
+     * Mantiene compatibilidad con la capa de servicio existente.
+     */
     public Order(String orderNumber, User user, OrderStatus status,
                  Address shippingAddress, Address billingAddress) {
         this.orderNumber = orderNumber;
@@ -108,10 +115,11 @@ public class Order {
         this.tax = BigDecimal.ZERO;
         this.shippingCost = BigDecimal.ZERO;
         this.total = BigDecimal.ZERO;
-        this.items = new ArrayList<>();
     }
 
-    // Constructor completo (excepto ID y timestamp autogenerado)
+    /**
+     * Constructor completo (excepto ID y createdAt autogenerados).
+     */
     public Order(String orderNumber, User user, OrderStatus status,
                  Address shippingAddress, Address billingAddress,
                  BigDecimal subtotal, BigDecimal tax, BigDecimal shippingCost, BigDecimal total) {
@@ -120,71 +128,20 @@ public class Order {
         this.status = status;
         this.shippingAddress = shippingAddress;
         this.billingAddress = billingAddress;
-        this.subtotal = subtotal != null ? subtotal : BigDecimal.ZERO;
-        this.tax = tax != null ? tax : BigDecimal.ZERO;
-        this.shippingCost = shippingCost != null ? shippingCost : BigDecimal.ZERO;
-        this.total = total != null ? total : BigDecimal.ZERO;
-        this.items = new ArrayList<>();
+        this.subtotal = subtotal;
+        this.tax = tax;
+        this.shippingCost = shippingCost;
+        this.total = total;
     }
 
-    // Lifecycle callback
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-    }
-
-    // Getters y Setters
-
-    public Long getOrderId() {
-        return orderId;
-    }
-
-    public void setOrderId(Long orderId) {
-        this.orderId = orderId;
-    }
-
-    public String getOrderNumber() {
-        return orderNumber;
-    }
-
-    public void setOrderNumber(String orderNumber) {
-        this.orderNumber = orderNumber;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public OrderStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(OrderStatus status) {
-        this.status = status;
-    }
-
-    public Address getShippingAddress() {
-        return shippingAddress;
-    }
-
-    public void setShippingAddress(Address shippingAddress) {
-        this.shippingAddress = shippingAddress;
-    }
-
-    public Address getBillingAddress() {
-        return billingAddress;
-    }
-
-    public void setBillingAddress(Address billingAddress) {
-        this.billingAddress = billingAddress;
-    }
-
-    public BigDecimal getSubtotal() {
-        return subtotal;
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+        if (this.items == null) {
+            this.items = new ArrayList<>();
+        }
     }
 
     public void setSubtotal(BigDecimal subtotal) {
@@ -192,17 +149,9 @@ public class Order {
         this.subtotal = subtotal;
     }
 
-    public BigDecimal getTax() {
-        return tax;
-    }
-
     public void setTax(BigDecimal tax) {
         ValidationUtils.validateNonNegative(tax, "tax");
         this.tax = tax;
-    }
-
-    public BigDecimal getShippingCost() {
-        return shippingCost;
     }
 
     public void setShippingCost(BigDecimal shippingCost) {
@@ -210,68 +159,12 @@ public class Order {
         this.shippingCost = shippingCost;
     }
 
-    public BigDecimal getTotal() {
-        return total;
-    }
-
     public void setTotal(BigDecimal total) {
         ValidationUtils.validateNonNegative(total, "total");
         this.total = total;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public List<OrderItem> getItems() {
-        return items;
-    }
-
-    public void setItems(List<OrderItem> items) {
-        this.items = items;
-    }
-
-    // Método helper para calcular total automáticamente
     public BigDecimal calculateTotal() {
         return CalculationUtils.calculateOrderTotal(subtotal, tax, shippingCost);
-    }
-
-    // equals y hashCode basados en ID
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Order order = (Order) o;
-        return Objects.equals(orderId, order.orderId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(orderId);
-    }
-
-    // toString sin navegación a objetos relacionados (solo IDs y tamaño de colección)
-
-    @Override
-    public String toString() {
-        return "Order{" +
-                "orderId=" + orderId +
-                ", orderNumber='" + orderNumber + '\'' +
-                ", userId=" + (user != null ? user.getUserId() : null) +
-                ", orderStatusId=" + (status != null ? status.getOrderStatusId() : null) +
-                ", shippingAddressId=" + (shippingAddress != null ? shippingAddress.getAddressId() : null) +
-                ", billingAddressId=" + (billingAddress != null ? billingAddress.getAddressId() : null) +
-                ", subtotal=" + subtotal +
-                ", tax=" + tax +
-                ", shippingCost=" + shippingCost +
-                ", total=" + total +
-                ", itemsCount=" + (items != null ? items.size() : 0) +
-                ", createdAt=" + createdAt +
-                '}';
     }
 }

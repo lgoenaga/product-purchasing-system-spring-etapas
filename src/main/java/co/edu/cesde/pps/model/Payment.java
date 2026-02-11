@@ -3,9 +3,10 @@ package co.edu.cesde.pps.model;
 import co.edu.cesde.pps.enums.Currency;
 import co.edu.cesde.pps.util.ValidationUtils;
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 /**
  * Entidad Payment - Registra transacciones de pago asociadas a una orden.
@@ -38,11 +39,20 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "payments")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@ToString(onlyExplicitlyIncluded = true)
 public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "payment_id")
+    @EqualsAndHashCode.Include
+    @ToString.Include
     private Long paymentId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -58,10 +68,12 @@ public class Payment {
     private PaymentStatus paymentStatus;
 
     @Column(name = "amount", nullable = false, precision = 10, scale = 2)
+    @ToString.Include
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "currency", nullable = false, length = 3)
+    @ToString.Include
     private Currency currency;
 
     @Column(name = "transaction_id", length = 255)
@@ -69,31 +81,6 @@ public class Payment {
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
-
-    // Constructor vacío (requerido para JPA)
-    public Payment() {
-    }
-
-    // Constructor con campos obligatorios
-    public Payment(Order order, PaymentMethod paymentMethod, PaymentStatus paymentStatus,
-                   BigDecimal amount, Currency currency) {
-        this.order = order;
-        this.paymentMethod = paymentMethod;
-        this.paymentStatus = paymentStatus;
-        this.amount = amount;
-        this.currency = currency;
-    }
-
-    // Constructor completo (excepto ID y createdAt autogenerados)
-    public Payment(Order order, PaymentMethod paymentMethod, PaymentStatus paymentStatus,
-                   BigDecimal amount, Currency currency, String transactionId) {
-        this.order = order;
-        this.paymentMethod = paymentMethod;
-        this.paymentStatus = paymentStatus;
-        this.amount = amount;
-        this.currency = currency;
-        this.transactionId = transactionId;
-    }
 
     // Lifecycle callback
     @PrePersist
@@ -104,109 +91,14 @@ public class Payment {
         }
     }
 
-    // Getters y Setters
-
-    public Long getPaymentId() {
-        return paymentId;
-    }
-
-    public void setPaymentId(Long paymentId) {
-        this.paymentId = paymentId;
-    }
-
-    public Order getOrder() {
-        return order;
-    }
-
-    public void setOrder(Order order) {
-        this.order = order;
-    }
-
-    public PaymentMethod getPaymentMethod() {
-        return paymentMethod;
-    }
-
-    public void setPaymentMethod(PaymentMethod paymentMethod) {
-        this.paymentMethod = paymentMethod;
-    }
-
-    public PaymentStatus getPaymentStatus() {
-        return paymentStatus;
-    }
-
-    public void setPaymentStatus(PaymentStatus paymentStatus) {
-        this.paymentStatus = paymentStatus;
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
     public void setAmount(BigDecimal amount) {
         // Validación: amount puede ser negativo (reembolsos), pero no null
         ValidationUtils.validateNotNull(amount, "amount");
         this.amount = amount;
     }
 
-    public Currency getCurrency() {
-        return currency;
-    }
-
-    public void setCurrency(Currency currency) {
-        this.currency = currency;
-    }
-
-    public String getTransactionId() {
-        return transactionId;
-    }
-
-    public void setTransactionId(String transactionId) {
-        this.transactionId = transactionId;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-
     // Método helper para verificar si es un reembolso
     public boolean isRefund() {
         return amount != null && amount.compareTo(BigDecimal.ZERO) < 0;
-    }
-
-    // equals y hashCode basados en ID
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Payment payment = (Payment) o;
-        return Objects.equals(paymentId, payment.paymentId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(paymentId);
-    }
-
-    // toString sin navegación a objetos relacionados (solo IDs)
-
-    @Override
-    public String toString() {
-        return "Payment{" +
-                "paymentId=" + paymentId +
-                ", orderId=" + (order != null ? order.getOrderId() : null) +
-                ", paymentMethodId=" + (paymentMethod != null ? paymentMethod.getPaymentMethodId() : null) +
-                ", paymentStatusId=" + (paymentStatus != null ? paymentStatus.getPaymentStatusId() : null) +
-                ", amount=" + amount +
-                ", currency=" + currency +
-                ", transactionId='" + transactionId + '\'' +
-                ", createdAt=" + createdAt +
-                ", isRefund=" + isRefund() +
-                '}';
     }
 }
