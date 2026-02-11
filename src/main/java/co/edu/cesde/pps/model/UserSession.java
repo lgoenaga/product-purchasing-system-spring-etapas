@@ -1,8 +1,9 @@
 package co.edu.cesde.pps.model;
 
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 /**
  * Entidad UserSession - Representa sesiones activas para navegación.
@@ -26,11 +27,20 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "user_sessions")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@ToString(onlyExplicitlyIncluded = true)
 public class UserSession {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "session_id")
+    @EqualsAndHashCode.Include
+    @ToString.Include
     private Long sessionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -38,6 +48,7 @@ public class UserSession {
     private User user; // Nullable - NULL para invitados
 
     @Column(name = "session_token", nullable = false, unique = true, length = 255)
+    @ToString.Include
     private String sessionToken;
 
     @Column(name = "created_at", updatable = false)
@@ -46,117 +57,19 @@ public class UserSession {
     @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;
 
-    // Constructor vacío (requerido para JPA)
-    public UserSession() {
-    }
-
-    // Constructor para sesión de invitado (sin user)
-    public UserSession(String sessionToken, LocalDateTime expiresAt) {
-        this.user = null; // Invitado
-        this.sessionToken = sessionToken;
-        this.expiresAt = expiresAt;
-    }
-
-    // Constructor para sesión de usuario registrado
-    public UserSession(User user, String sessionToken, LocalDateTime expiresAt) {
-        this.user = user;
-        this.sessionToken = sessionToken;
-        this.expiresAt = expiresAt;
-    }
-
-    // Constructor completo (excepto ID y createdAt autogenerados)
-    public UserSession(User user, String sessionToken, LocalDateTime expiresAt, LocalDateTime createdAt) {
-        this.user = user;
-        this.sessionToken = sessionToken;
-        this.createdAt = createdAt != null ? createdAt : LocalDateTime.now();
-        this.expiresAt = expiresAt;
-    }
-
     // Lifecycle callback para establecer createdAt
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
     }
 
-    // Getters y Setters
-
-    public Long getSessionId() {
-        return sessionId;
-    }
-
-    public void setSessionId(Long sessionId) {
-        this.sessionId = sessionId;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public String getSessionToken() {
-        return sessionToken;
-    }
-
-    public void setSessionToken(String sessionToken) {
-        this.sessionToken = sessionToken;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getExpiresAt() {
-        return expiresAt;
-    }
-
-    public void setExpiresAt(LocalDateTime expiresAt) {
-        this.expiresAt = expiresAt;
-    }
-
-    // Método helper para verificar si es sesión de invitado
     public boolean isGuestSession() {
         return user == null;
     }
 
-    // Método helper para verificar si la sesión ha expirado
     public boolean isExpired() {
         return expiresAt != null && LocalDateTime.now().isAfter(expiresAt);
-    }
-
-    // equals y hashCode basados en ID
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        UserSession that = (UserSession) o;
-        return Objects.equals(sessionId, that.sessionId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(sessionId);
-    }
-
-    // toString sin navegación a objetos relacionados (solo IDs)
-
-    @Override
-    public String toString() {
-        return "UserSession{" +
-                "sessionId=" + sessionId +
-                ", userId=" + (user != null ? user.getUserId() : null) +
-                ", sessionToken='" + sessionToken + '\'' +
-                ", createdAt=" + createdAt +
-                ", expiresAt=" + expiresAt +
-                ", isGuest=" + isGuestSession() +
-                ", isExpired=" + isExpired() +
-                '}';
     }
 }

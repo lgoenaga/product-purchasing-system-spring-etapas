@@ -75,9 +75,12 @@ public class UserService {
 
             Role defaultRole = getDefaultCustomerRole(roleRepository);
 
-            User user = new User(defaultRole, normalizedEmail, passwordHash,
-                    firstName.trim(), lastName.trim());
-
+            User user = new User();
+            user.setRole(defaultRole);
+            user.setEmail(normalizedEmail);
+            user.setPasswordHash(passwordHash);
+            user.setFirstName(firstName.trim());
+            user.setLastName(lastName.trim());
             user.setPhone(phone != null && !phone.isBlank() ? phone.trim() : null);
             user.setStatus(UserStatus.ACTIVE);
 
