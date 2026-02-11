@@ -3,9 +3,10 @@ package co.edu.cesde.pps.model;
 import co.edu.cesde.pps.util.CalculationUtils;
 import co.edu.cesde.pps.util.ValidationUtils;
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 /**
  * Entidad CartItem - Detalle de items en el carrito de compras.
@@ -35,11 +36,20 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "cart_items")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@ToString(onlyExplicitlyIncluded = true)
 public class CartItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "cart_item_id")
+    @EqualsAndHashCode.Include
+    @ToString.Include
     private Long cartItemId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -51,6 +61,7 @@ public class CartItem {
     private Product product;
 
     @Column(name = "quantity", nullable = false)
+    @ToString.Include
     private Integer quantity;
 
     @Column(name = "unit_price", nullable = false, precision = 10, scale = 2)
@@ -59,11 +70,10 @@ public class CartItem {
     @Column(name = "added_at", updatable = false)
     private LocalDateTime addedAt;
 
-    // Constructor vacío (requerido para JPA)
-    public CartItem() {
-    }
-
-    // Constructor con campos obligatorios
+    /**
+     * Constructor de conveniencia con campos obligatorios.
+     * Mantiene compatibilidad con la capa de servicio existente.
+     */
     public CartItem(Cart cart, Product product, Integer quantity, BigDecimal unitPrice) {
         this.cart = cart;
         this.product = product;
@@ -71,49 +81,22 @@ public class CartItem {
         this.unitPrice = unitPrice;
     }
 
-    // Constructor completo (excepto ID y timestamp autogenerado)
+    /**
+     * Constructor completo (excepto ID) con fecha opcional.
+     */
     public CartItem(Cart cart, Product product, Integer quantity, BigDecimal unitPrice, LocalDateTime addedAt) {
         this.cart = cart;
         this.product = product;
         this.quantity = quantity;
         this.unitPrice = unitPrice;
-        this.addedAt = addedAt != null ? addedAt : LocalDateTime.now();
+        this.addedAt = addedAt;
     }
 
-    // Lifecycle callback
     @PrePersist
     protected void onCreate() {
-        this.addedAt = LocalDateTime.now();
-    }
-
-    // Getters y Setters
-
-    public Long getCartItemId() {
-        return cartItemId;
-    }
-
-    public void setCartItemId(Long cartItemId) {
-        this.cartItemId = cartItemId;
-    }
-
-    public Cart getCart() {
-        return cart;
-    }
-
-    public void setCart(Cart cart) {
-        this.cart = cart;
-    }
-
-    public Product getProduct() {
-        return product;
-    }
-
-    public void setProduct(Product product) {
-        this.product = product;
-    }
-
-    public Integer getQuantity() {
-        return quantity;
+        if (this.addedAt == null) {
+            this.addedAt = LocalDateTime.now();
+        }
     }
 
     public void setQuantity(Integer quantity) {
@@ -121,55 +104,12 @@ public class CartItem {
         this.quantity = quantity;
     }
 
-    public BigDecimal getUnitPrice() {
-        return unitPrice;
-    }
-
     public void setUnitPrice(BigDecimal unitPrice) {
         ValidationUtils.validateNonNegative(unitPrice, "unitPrice");
         this.unitPrice = unitPrice;
     }
 
-    public LocalDateTime getAddedAt() {
-        return addedAt;
-    }
-
-    public void setAddedAt(LocalDateTime addedAt) {
-        this.addedAt = addedAt;
-    }
-
-    // Método helper para calcular subtotal del item
     public BigDecimal calculateSubtotal() {
         return CalculationUtils.calculateCartItemSubtotal(unitPrice, quantity);
-    }
-
-    // equals y hashCode basados en ID
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        CartItem cartItem = (CartItem) o;
-        return Objects.equals(cartItemId, cartItem.cartItemId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(cartItemId);
-    }
-
-    // toString sin navegación a objetos relacionados (solo IDs)
-
-    @Override
-    public String toString() {
-        return "CartItem{" +
-                "cartItemId=" + cartItemId +
-                ", cartId=" + (cart != null ? cart.getCartId() : null) +
-                ", productId=" + (product != null ? product.getProductId() : null) +
-                ", quantity=" + quantity +
-                ", unitPrice=" + unitPrice +
-                ", subtotal=" + calculateSubtotal() +
-                ", addedAt=" + addedAt +
-                '}';
     }
 }
